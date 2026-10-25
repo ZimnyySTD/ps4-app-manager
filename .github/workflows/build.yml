@@ -2,11 +2,13 @@ name: Build PS4 App Manager PKG
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - '**'
     tags:
       - 'v*'
   pull_request:
-    branches: [ main, master ]
+    branches:
+      - '**'
   workflow_dispatch:
 
 jobs:
