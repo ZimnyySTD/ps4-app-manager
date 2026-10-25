@@ -1,0 +1,8 @@
+build/
+build_autobuild/
+eboot.bin
+pkg_system/
+pkg_assets/
+pkg_module/
+absetting.xml
+assets/param.sfo

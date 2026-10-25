@@ -1,0 +1,64 @@
+name: Build PS4 App Manager PKG
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Pull OpenOrbis Docker Image
+        run: |
+          docker pull openorbisofficial/toolchain:latest
+
+      - name: Extract & Setup OpenOrbis Toolchain
+        run: |
+          python3 scripts/setup_toolchain.py
+
+      - name: Build Executable & Package
+        run: |
+          make OO_PS4_TOOLCHAIN=/tmp/oo_root/usr/lib/OpenOrbisSDK
+
+      - name: Validate Generated PKG
+        run: |
+          make test
+
+      - name: Upload PKG Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PS4-App-Manager.pkg
+          path: build/PS4-App-Manager.pkg
+          retention-days: 30
+
+      - name: Upload Build Diagnostics on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-diagnostics
+          path: |
+            build/
+            /tmp/bin/orbis-ld
+          retention-days: 7
+
+      - name: Create GitHub Release on Tag
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/PS4-App-Manager.pkg
+          body: "PS4 App Manager compiled package release."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
