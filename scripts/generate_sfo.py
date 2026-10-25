@@ -2,6 +2,9 @@
 import struct
 
 def build_sfo(params):
+    # Sort parameters alphabetically by key name as required by SFO specification
+    params = sorted(params, key=lambda x: x[0])
+
     key_table = bytearray()
     data_table = bytearray()
     entries = []
@@ -58,4 +61,4 @@ if __name__ == "__main__":
     with open('assets/param.sfo', 'wb') as f:
         f.write(sfo_data)
 
-    print(f"Generated compliant binary assets/param.sfo ({len(sfo_data)} bytes)")
+    print(f"Generated alphabetically sorted assets/param.sfo ({len(sfo_data)} bytes)")
