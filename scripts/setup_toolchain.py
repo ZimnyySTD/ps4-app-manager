@@ -8,24 +8,21 @@ import glob
 OO_ROOT = "/tmp/oo_root"
 
 def setup():
-    if os.path.exists(f"{OO_ROOT}/usr/lib/llvm-10/bin/lld") and os.path.exists(f"{OO_ROOT}/usr/lib/OpenOrbisSDK"):
-        print("Toolchain already properly present at", OO_ROOT)
-    else:
+    if not (os.path.exists(f"{OO_ROOT}/usr/lib/llvm-10/bin/lld") and os.path.exists(f"{OO_ROOT}/usr/lib/OpenOrbisSDK") and os.path.exists(f"{OO_ROOT}/usr/lib/x86_64-linux-gnu/libffi.so.7")):
         print("Extracting OpenOrbis toolchain from Docker image...")
         os.makedirs("/tmp/openorbis_tar", exist_ok=True)
         os.makedirs(OO_ROOT, exist_ok=True)
 
-        p = subprocess.Popen(['docker', 'image', 'save', 'openorbisofficial/toolchain:latest'], stdout=subprocess.PIPE)
-        with tarfile.open(fileobj=p.stdout, mode='r|*') as tf:
-            tf.extractall(path='/tmp/openorbis_tar')
+        if not glob.glob('/tmp/openorbis_tar/blobs/sha256/*'):
+            p = subprocess.Popen(['docker', 'image', 'save', 'openorbisofficial/toolchain:latest'], stdout=subprocess.PIPE)
+            with tarfile.open(fileobj=p.stdout, mode='r|*') as tf:
+                tf.extractall(path='/tmp/openorbis_tar')
 
         for blob in glob.glob('/tmp/openorbis_tar/blobs/sha256/*'):
             try:
                 with tarfile.open(blob, 'r') as tar:
-                    names = tar.getnames()
-                    if any('OpenOrbisSDK' in n or 'llvm-10' in n or 'libssl' in n or 'libcrypto' in n for n in names):
-                        print(f"Extracting layer {os.path.basename(blob)}...")
-                        tar.extractall(OO_ROOT)
+                    print(f"Extracting layer {os.path.basename(blob)}...")
+                    tar.extractall(OO_ROOT)
             except Exception:
                 pass
 
@@ -55,6 +52,10 @@ def setup():
     os.makedirs('/tmp/ssl1.1', exist_ok=True)
     subprocess.run(f"cp -f {OO_ROOT}/usr/lib/x86_64-linux-gnu/libssl.so* /tmp/ssl1.1/ 2>/dev/null", shell=True)
     subprocess.run(f"cp -f {OO_ROOT}/usr/lib/x86_64-linux-gnu/libcrypto.so* /tmp/ssl1.1/ 2>/dev/null", shell=True)
+
+    os.makedirs('/tmp/llvm_libs', exist_ok=True)
+    subprocess.run(f"cp -f {OO_ROOT}/usr/lib/x86_64-linux-gnu/libLLVM-10.so* /tmp/llvm_libs/ 2>/dev/null", shell=True)
+    subprocess.run(f"cp -f {OO_ROOT}/usr/lib/x86_64-linux-gnu/libffi.so* /tmp/llvm_libs/ 2>/dev/null", shell=True)
 
     print("Toolchain setup complete.")
 
